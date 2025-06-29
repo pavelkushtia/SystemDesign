@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScaleSim Debug Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .debug-box { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .success { color: #059669; }
+        .error { color: #dc2626; }
+        .warning { color: #d97706; }
+        #status { font-weight: bold; margin-bottom: 10px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; max-height: 300px; overflow-y: auto; }
+        .test-item { margin: 5px 0; padding: 5px; background: #f8f9fa; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 ScaleSim Debug Tool</h1>
+    <p><strong>Use this tool to diagnose React app loading issues</strong></p>
+    
+    <div class="debug-box">
+        <div id="status">🔍 Testing React App...</div>
+    </div>
+
+    <div class="debug-box">
+        <h3>📊 Test Results:</h3>
+        <div id="tests"></div>
+    </div>
+
+    <div class="debug-box">
+        <h3>🖥️ Console Output:</h3>
+        <pre id="console-output">Initializing tests...\n</pre>
+    </div>
+
+    <div id="react-test"></div>
+
+    <script>
+        let output = 'Initializing tests...\n';
+        let tests = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            output += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            document.getElementById('console-output').textContent = output;
+            
+            const testItem = document.createElement('div');
+            testItem.className = 'test-item';
+            
+            if (type === 'error') {
+                testItem.innerHTML = `❌ <strong>ERROR:</strong> ${message}`;
+                testItem.style.borderLeft = '4px solid #dc2626';
+            } else if (type === 'success') {
+                testItem.innerHTML = `✅ <strong>SUCCESS:</strong> ${message}`;
+                testItem.style.borderLeft = '4px solid #059669';
+            } else {
+                testItem.innerHTML = `ℹ️ <strong>INFO:</strong> ${message}`;
+                testItem.style.borderLeft = '4px solid #6b7280';
+            }
+            
+            document.getElementById('tests').appendChild(testItem);
+            
+            // Auto-scroll to bottom
+            const testsDiv = document.getElementById('tests');
+            testsDiv.scrollTop = testsDiv.scrollHeight;
+        }
+
+        // Capture console errors
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const originalLog = console.log;
+        
+        console.error = function(...args) {
+            log('Console Error: ' + args.join(' '), 'error');
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            log('Console Warning: ' + args.join(' '), 'warning');
+            originalWarn.apply(console, args);
+        };
+
+        // Capture unhandled errors
+        window.addEventListener('error', (e) => {
+            log(`JavaScript Error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`, 'error');
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            log(`Unhandled Promise Rejection: ${e.reason}`, 'error');
+        });
+
+        async function testReactApp() {
+            try {
+                log('Starting React application diagnostics...');
+                
+                // Test 1: Basic connectivity
+                log('Testing Vite dev server connectivity...');
+                const response = await fetch('/');
+                if (response.ok) {
+                    log('Vite dev server is responding correctly', 'success');
+                } else {
+                    log(`Vite dev server error: ${response.status} ${response.statusText}`, 'error');
+                    return;
+                }
+                
+                // Test 2: React module loading
+                log('Testing React module imports...');
+                const { default: React } = await import('react');
+                const { createRoot } = await import('react-dom/client');
+                log('React and ReactDOM modules loaded successfully', 'success');
+                
+                // Test 3: Simple React rendering
+                log('Testing basic React component rendering...');
+                const testDiv = document.getElementById('react-test');
+                const TestComponent = React.createElement('div', {
+                    style: { 
+                        padding: '15px', 
+                        background: '#dbeafe', 
+                        borderRadius: '6px', 
+                        margin: '10px 0',
+                        border: '2px solid #3b82f6'
+                    }
+                }, '🎉 React is working! This component rendered successfully.');
+                
+                const root = createRoot(testDiv);
+                root.render(TestComponent);
+                log('Basic React component rendered without errors', 'success');
+                
+                // Test 4: Main App component
+                log('Testing main App component loading...');
+                const { default: App } = await import('/src/App.tsx');
+                log('Main App component imported successfully', 'success');
+                
+                // Test 5: Main Layout component
+                log('Testing MainLayout component loading...');
+                const { MainLayout } = await import('/src/components/layout/MainLayout.tsx');
+                log('MainLayout component imported successfully', 'success');
+                
+                // Test 6: Dashboard component (main landing page)
+                log('Testing Dashboard component loading...');
+                const { default: Dashboard } = await import('/src/pages/Dashboard.tsx');
+                log('Dashboard component imported successfully', 'success');
+                
+                // Test 7: Router dependencies
+                log('Testing React Router dependencies...');
+                const { BrowserRouter, Routes, Route } = await import('react-router-dom');
+                log('React Router components loaded successfully', 'success');
+                
+                // Test 8: UI dependencies
+                log('Testing UI library dependencies...');
+                await import('@heroicons/react/24/outline');
+                log('Heroicons loaded successfully', 'success');
+                
+                document.getElementById('status').innerHTML = '<span class="success">✅ All diagnostic tests passed! React app should work correctly.</span>';
+                
+                // Add helpful next steps
+                setTimeout(() => {
+                    const nextSteps = document.createElement('div');
+                    nextSteps.className = 'debug-box';
+                    nextSteps.innerHTML = `
+                        <h3>🎯 Next Steps:</h3>
+                        <p><strong>All tests passed!</strong> If the main app still doesn't load:</p>
+                        <ol>
+                            <li><strong>Open main app:</strong> <a href="/" target="_blank">http://localhost:3000</a></li>
+                            <li><strong>Check browser console:</strong> Press F12 → Console tab</li>
+                            <li><strong>Try hard refresh:</strong> Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac)</li>
+                            <li><strong>Check Network tab:</strong> Look for failed requests (red entries)</li>
+                        </ol>
+                        <p>If you see errors in the main app console, copy them and share for specific debugging.</p>
+                    `;
+                    document.body.appendChild(nextSteps);
+                }, 1000);
+                
+            } catch (error) {
+                log(`Critical error during testing: ${error.message}`, 'error');
+                if (error.stack) {
+                    log(`Stack trace: ${error.stack}`, 'error');
+                }
+                document.getElementById('status').innerHTML = '<span class="error">❌ React app has critical errors preventing loading</span>';
+                
+                // Add troubleshooting for the specific error
+                const troubleshoot = document.createElement('div');
+                troubleshoot.className = 'debug-box';
+                troubleshoot.style.borderLeft = '4px solid #dc2626';
+                troubleshoot.innerHTML = `
+                    <h3>🚨 Critical Error Found:</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>This is preventing your React app from loading.</strong></p>
+                    <h4>Suggested fixes:</h4>
+                    <ul>
+                        <li>Check if all npm packages are installed: <code>npm install</code></li>
+                        <li>Rebuild shared dependencies: <code>cd ../shared && npm run build</code></li>
+                        <li>Clear node_modules and reinstall: <code>rm -rf node_modules && npm install</code></li>
+                        <li>Restart the dev server completely</li>
+                    </ul>
+                `;
+                document.body.appendChild(troubleshoot);
+            }
+        }
+        
+        // Run the diagnostic tests
+        testReactApp();
+    </script>
+</body>
+</html> 

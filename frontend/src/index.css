@@ -2,36 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* EMERGENCY: Force all SVG icons to have maximum size constraints */
-svg {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-}
-
-/* Force heroicons to respect size classes */
-svg[data-heroicons] {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* Tailwind size classes for SVGs */
-.h-4.w-4 svg, svg.h-4.w-4 {
-  width: 1rem !important;
-  height: 1rem !important;
-}
-
-.h-5.w-5 svg, svg.h-5.w-5 {
-  width: 1.25rem !important;
-  height: 1.25rem !important;
-}
-
-.h-6.w-6 svg, svg.h-6.w-6 {
-  width: 1.5rem !important;
-  height: 1.5rem !important;
-}
-
 /* Global styles */
 @layer base {
   html {
@@ -151,6 +121,29 @@ svg[data-heroicons] {
   }
 }
 
+/* Targeted fix for Heroicons in navigation and UI components */
+.sidebar-nav svg,
+.nav-icon svg,
+.btn svg,
+.icon-button svg {
+  max-width: 1.25rem !important;
+  max-height: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+/* Allow larger icons when explicitly sized */
+.w-5.h-5 svg,
+.w-6.h-6 svg,
+.w-8.h-8 svg,
+.w-10.h-10 svg,
+.w-12.h-12 svg {
+  max-width: inherit !important;
+  max-height: inherit !important;
+  width: inherit !important;
+  height: inherit !important;
+}
+
 /* Utility styles */
 @layer utilities {
   .text-gradient {
@@ -200,28 +193,28 @@ svg[data-heroicons] {
   }
   
   .react-flow__controls {
-    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg;
+    @apply rounded-lg shadow-md border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-600;
   }
   
   .react-flow__controls button {
-    @apply bg-transparent border-none text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100;
+    @apply text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100;
   }
   
   .react-flow__minimap {
-    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg;
+    @apply rounded-lg shadow-md border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-600;
   }
   
   /* Monaco Editor customizations */
   .monaco-editor {
-    @apply rounded-lg overflow-hidden;
+    @apply rounded-lg border border-gray-200 dark:border-gray-600;
   }
   
   .monaco-editor .margin {
-    @apply bg-gray-50 dark:bg-gray-900;
+    @apply bg-gray-50 dark:bg-gray-800;
   }
 }
 
-/* Keyframe animations */
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -235,36 +228,57 @@ svg[data-heroicons] {
 
 @keyframes slideUp {
   from {
+    transform: translateY(100%);
     opacity: 0;
-    transform: translateY(20px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
+    opacity: 1;
   }
 }
 
 @keyframes slideDown {
   from {
+    transform: translateY(-100%);
     opacity: 0;
-    transform: translateY(-20px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
+    opacity: 1;
   }
 }
 
-/* Focus styles for accessibility */
-@layer base {
+/* Focus improvements */
+@layer utilities {
   *:focus-visible {
-    @apply outline-none ring-2 ring-brand-500 ring-offset-2 dark:ring-offset-gray-900;
+    @apply outline-2 outline-brand-500 outline-offset-2;
   }
 }
 
-/* Print styles */
 @media print {
   .no-print {
     display: none !important;
   }
+}
+
+/* EMERGENCY: Force all SVGs to reasonable sizes - DO NOT REMOVE */
+/* This fixes the fundamental incompatibility between Heroicons and Tailwind CSS */
+svg {
+  max-width: 1rem !important;
+  max-height: 1rem !important;
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+/* Allow larger icons when explicitly sized with Tailwind classes */
+.w-4.h-4 svg,
+.w-5.h-5 svg,
+.w-6.h-6 svg,
+.w-8.h-8 svg,
+.w-10.h-10 svg,
+.w-12.h-12 svg {
+  max-width: inherit !important;
+  max-height: inherit !important;
+  width: inherit !important;
+  height: inherit !important;
 } 

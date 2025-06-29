@@ -21,16 +21,6 @@ import { ComponentPalette } from '@/components/flow/ComponentPalette';
 import { PropertyPanel } from '@/components/flow/PropertyPanel';
 import { SystemToolbar } from '@/components/flow/SystemToolbar';
 
-// Emergency icon style to prevent giant icons
-const iconStyle = { 
-  width: '1rem', 
-  height: '1rem', 
-  maxWidth: '1rem', 
-  maxHeight: '1rem',
-  minWidth: '1rem',
-  minHeight: '1rem'
-};
-
 const nodeTypes: NodeTypes = {
   component: ComponentNode,
 };
@@ -145,6 +135,26 @@ export default function SystemDesigner() {
       api_gateway: { auth: 'jwt', rate_limit: 1000 },
       ml_model: { framework: 'pytorch', accelerator: 'gpu' },
       monitoring: { type: 'prometheus', retention: '30d' },
+      // New component types
+      postgresql: { version: '14', replicas: 1, storage: '10Gi' },
+      mongodb: { version: '5.0', replicas: 1, storage: '20Gi' },
+      mysql: { version: '8.0', replicas: 1, storage: '10Gi' },
+      redis: { version: '7.0', memory: '2Gi', persistence: true },
+      kafka: { version: '3.3', partitions: 3, replicas: 1 },
+      rabbitmq: { version: '3.11', memory: '1Gi', disk: '5Gi' },
+      pulsar: { version: '2.10', bookkeeper_replicas: 3 },
+      pytorch: { version: '1.13', gpu: true, replicas: 1 },
+      tensorflow: { version: '2.11', gpu: true, serving: true },
+      mlflow: { version: '2.1', tracking_uri: 'http://mlflow:5000' },
+      kubeflow: { version: '1.6', namespace: 'kubeflow' },
+      prometheus: { version: '2.40', retention: '15d', storage: '50Gi' },
+      grafana: { version: '9.3', admin_password: 'admin' },
+      elasticsearch: { version: '8.5', replicas: 3, storage: '30Gi' },
+      jaeger: { version: '1.38', collector_replicas: 2 },
+      aws_s3: { bucket_name: 'my-bucket', region: 'us-east-1' },
+      aws_lambda: { runtime: 'python3.9', memory: 512, timeout: 30 },
+      aws_rds: { engine: 'postgres', instance_class: 'db.t3.micro' },
+      kubernetes: { version: '1.25', node_count: 3, node_type: 't3.medium' },
     };
     return configs[componentType] || {};
   };
@@ -175,11 +185,6 @@ export default function SystemDesigner() {
     console.log('Deploying system');
   };
 
-  const onDragStart = useCallback((event: React.DragEvent, componentType: string) => {
-    event.dataTransfer.setData('application/reactflow', componentType);
-    event.dataTransfer.effectAllowed = 'move';
-  }, []);
-
   const onNodeUpdate = useCallback((updatedNode: Node) => {
     setNodes((nds) =>
       nds.map((node) =>
@@ -189,103 +194,85 @@ export default function SystemDesigner() {
   }, [setNodes]);
 
   return (
-    <div 
-      className="h-full flex flex-col bg-gray-50 dark:bg-gray-900"
-      style={{ 
-        height: '100%', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        backgroundColor: '#f9fafb' 
-      }}
-    >
-      {/* Toolbar */}
-      <div 
-        className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-        style={{ 
-          flexShrink: 0, 
-          backgroundColor: 'white', 
-          borderBottom: '1px solid #e5e7eb' 
-        }}
-      >
-        <SystemToolbar
-          systemName={systemName}
-          onSystemNameChange={setSystemName}
-          onSave={onSave}
-          onSimulate={onSimulate}
-          onDeploy={onDeploy}
-          isSimulating={isSimulating}
-        />
+    <div className="h-screen flex bg-gray-50 dark:bg-gray-900">
+      {/* Component Palette Sidebar */}
+      <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <ComponentPalette />
       </div>
 
-      {/* Main Content Area */}
-      <div 
-        className="flex-1 flex"
-        style={{ 
-          flex: '1 1 0%', 
-          display: 'flex' 
-        }}
-      >
-        {/* Component Palette */}
-        <div 
-          className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col"
-          style={{ 
-            width: '20rem', 
-            backgroundColor: 'white', 
-            borderRight: '1px solid #e5e7eb', 
-            display: 'flex', 
-            flexDirection: 'column' 
-          }}
-        >
-          <ComponentPalette />
+      {/* Main Designer Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Toolbar */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+          <SystemToolbar
+            systemName={systemName}
+            onSystemNameChange={setSystemName}
+            onSave={onSave}
+            onSimulate={onSimulate}
+            onDeploy={onDeploy}
+            isSimulating={isSimulating}
+          />
         </div>
 
-        {/* Main Canvas Area */}
-        <div 
-          className="flex-1 bg-gray-50 dark:bg-gray-900"
-          style={{ 
-            flex: '1 1 0%', 
-            backgroundColor: '#f9fafb',
-            position: 'relative'
-          }}
-        >
+        {/* React Flow Canvas */}
+        <div className="flex-1 relative">
           <ReactFlow
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
             onDrop={onDrop}
             onDragOver={onDragOver}
-            onNodeClick={onNodeClick}
             nodeTypes={nodeTypes}
-            defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-            proOptions={{ hideAttribution: true }}
-            style={{ width: '100%', height: '100%' }}
+            connectionMode={ConnectionMode.Loose}
+            fitView
+            className="bg-gray-50 dark:bg-gray-900"
           >
-            <Background />
+            <Background color="#94a3b8" />
             <Controls />
-            <MiniMap />
+            <MiniMap
+              nodeColor={(node) => {
+                switch (node.data?.componentType) {
+                  case 'load_balancer':
+                    return '#10b981';
+                  case 'microservice':
+                    return '#3b82f6';
+                  case 'database':
+                    return '#8b5cf6';
+                  case 'cache':
+                    return '#ef4444';
+                  case 'message_queue':
+                    return '#f59e0b';
+                  case 'api_gateway':
+                    return '#06b6d4';
+                  case 'ml_model':
+                    return '#ec4899';
+                  case 'monitoring':
+                    return '#6b7280';
+                  default:
+                    return '#6b7280';
+                }
+              }}
+              pannable
+              zoomable
+            />
           </ReactFlow>
         </div>
-
-        {/* Property Panel */}
-        {selectedNode && (
-          <div 
-            className="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700"
-            style={{ 
-              width: '20rem', 
-              backgroundColor: 'white', 
-              borderLeft: '1px solid #e5e7eb' 
-            }}
-          >
-            <PropertyPanel 
-              node={selectedNode} 
-              onNodeUpdate={onNodeUpdate} 
-              onClose={() => setSelectedNode(null)}
-            />
-          </div>
-        )}
       </div>
+
+      {/* Property Panel Sidebar */}
+      {selectedNode && (
+        <div className="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
+          <PropertyPanel
+            node={selectedNode}
+            onNodeUpdate={onNodeUpdate}
+            onClose={() => setSelectedNode(null)}
+          />
+        </div>
+      )}
     </div>
   );
 } 
