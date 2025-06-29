@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ScaleSim - Visual Distributed Systems & ML Infrastructure Design, Simulation & Deployment Platform" />
+    <meta name="keywords" content="distributed systems, machine learning, microservices, visual programming, simulation, kubernetes, mlops, system design" />
+    <meta name="author" content="ScaleSim Team" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="ScaleSim - Visual Studio for Distributed Systems" />
+    <meta property="og:description" content="Design, simulate, and deploy distributed systems visually. The first platform combining system design, ML model building, performance simulation, and production deployment." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://scalesim.app" />
+    <meta property="og:image" content="/og-image.png" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ScaleSim - Visual Studio for Distributed Systems" />
+    <meta name="twitter:description" content="Design, simulate, and deploy distributed systems visually." />
+    <meta name="twitter:image" content="/twitter-card.png" />
+    
+    <!-- Preconnect to external resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- JetBrains Mono for code -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+    
+    <title>ScaleSim - Visual Studio for Distributed Systems</title>
+    
+    <style>
+      /* Loading screen styles */
+      .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: none; /* Hide by default */
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        font-family: 'Inter', sans-serif;
+        color: white;
+      }
+      
+      .loading-logo {
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        color: white;
+      }
+      
+      .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+      }
+      
+      .loading-text {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        text-align: center;
+        max-width: 400px;
+        line-height: 1.6;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Hide loading screen when app loads */
+      .app-loaded .loading-screen {
+        opacity: 0;
+        transition: opacity 0.5s ease-out;
+        pointer-events: none;
+      }
+      
+      /* Dark mode support */
+      @media (prefers-color-scheme: dark) {
+        .loading-screen {
+          background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+      <div class="loading-logo">ScaleSim</div>
+      <div class="loading-spinner"></div>
+      <div class="loading-text">
+        Loading the Visual Studio for Distributed Systems...
+      </div>
+    </div>
+    
+    <!-- React App Root -->
+    <div id="root"></div>
+    
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <script>
+      // Hide loading screen when app loads
+      function hideLoadingScreen() {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+          document.body.classList.add('app-loaded');
+          setTimeout(function() {
+            loadingScreen.style.display = 'none';
+          }, 200);
+        }
+      }
+
+      // Try multiple events to ensure loading screen is hidden
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(hideLoadingScreen, 300);
+      });
+      
+      window.addEventListener('load', function() {
+        setTimeout(hideLoadingScreen, 100);
+      });
+      
+      // Fallback: Always hide loading screen after 3 seconds
+      setTimeout(hideLoadingScreen, 3000);
+      
+      // Error handling
+      window.addEventListener('error', function(e) {
+        console.error('Application error:', e.error);
+        hideLoadingScreen(); // Hide loading screen on error
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error('Unhandled promise rejection:', e.reason);
+      });
+    </script>
+  </body>
+</html> 
