@@ -1,0 +1,15 @@
+
+> @scalesim/backend@1.0.0 dev
+> tsx watch src/index.ts
+
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32mDatabase tables and indexes created successfully[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32mDatabase already seeded, skipping...[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32mDatabase initialized at ./data/scalesim.db[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32mDatabase initialized successfully[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32mWebSocket server initialized[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32m🚀 ScaleSim Backend Server started[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32m📍 Environment: development[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32m🌐 Server: http://localhost:3001[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32m📊 Health: http://localhost:3001/health[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32m🔌 WebSocket: ws://localhost:3001[32m[39m
+2025-06-28 23:29:44:2944 [32m[32minfo[32m[39m: [32m[32m📚 API Docs: http://localhost:3001/api/docs[32m[39m

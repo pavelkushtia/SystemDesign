@@ -518,22 +518,6 @@ export type DeploymentConfig = z.infer<typeof DeploymentConfigSchema>;
 export type ApiResponse = z.infer<typeof ApiResponseSchema>;
 
 // ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
-
-export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): T {
-  const result = schema.safeParse(data);
-  if (!result.success) {
-    throw new ValidationError('Invalid data', result.error.errors);
-  }
-  return result.data;
-}
-
-// ============================================================================
 // ERROR CLASSES
 // ============================================================================
 
@@ -563,90 +547,4 @@ export class ForbiddenError extends Error {
     super(message);
     this.name = 'ForbiddenError';
   }
-}
-
-// ============================================================================
-// UTILITY FUNCTIONS FOR PERFORMANCE SIMULATION
-// ============================================================================
-
-export function calculateSystemPerformance(
-  components: ComponentConfig[],
-  connections: Connection[]
-): {
-  totalLatency: number;
-  totalThroughput: number;
-  bottlenecks: string[];
-  recommendations: string[];
-} {
-  // Simplified performance calculation
-  const totalLatency = components.reduce((sum, comp) => {
-    const baseLatency = getComponentBaseLatency(comp.type);
-    return sum + baseLatency;
-  }, 0);
-
-  const totalThroughput = Math.min(
-    ...components.map(comp => getComponentBaseThroughput(comp.type))
-  );
-
-  const bottlenecks = components
-    .filter(comp => getComponentBaseThroughput(comp.type) < totalThroughput * 1.2)
-    .map(comp => `${comp.name}: Potential bottleneck`);
-
-  const recommendations = [
-    'Consider horizontal scaling for high-traffic components',
-    'Add caching layer to reduce database load',
-    'Implement circuit breakers for fault tolerance'
-  ];
-
-  return {
-    totalLatency,
-    totalThroughput,
-    bottlenecks,
-    recommendations
-  };
-}
-
-export function generatePerformanceRecommendations(
-  components: ComponentConfig[]
-): string[] {
-  const recommendations: string[] = [];
-  
-  components.forEach(component => {
-    if (component.type === ComponentType.DATABASE) {
-      recommendations.push(`Consider adding connection pooling for ${component.name}`);
-    }
-    if (component.type === ComponentType.MICROSERVICE) {
-      recommendations.push(`Consider horizontal scaling for ${component.name}`);
-    }
-  });
-  
-  return recommendations;
-}
-
-function getComponentBaseLatency(type: ComponentType): number {
-  const latencies: Record<ComponentType, number> = {
-    [ComponentType.API_GATEWAY]: 5,
-    [ComponentType.LOAD_BALANCER]: 2,
-    [ComponentType.MICROSERVICE]: 50,
-    [ComponentType.DATABASE]: 10,
-    [ComponentType.CACHE]: 1,
-    [ComponentType.MESSAGE_QUEUE]: 3,
-    [ComponentType.ML_MODEL]: 200,
-    [ComponentType.CDN]: 20
-  };
-  return latencies[type] || 50;
-}
-
-function getComponentBaseThroughput(type: ComponentType): number {
-  const throughputs: Record<ComponentType, number> = {
-    [ComponentType.API_GATEWAY]: 5000,
-    [ComponentType.LOAD_BALANCER]: 10000,
-    [ComponentType.MICROSERVICE]: 1000,
-    [ComponentType.DATABASE]: 2000,
-    [ComponentType.CACHE]: 50000,
-    [ComponentType.MESSAGE_QUEUE]: 20000,
-    [ComponentType.ML_MODEL]: 100,
-    [ComponentType.CDN]: 5000
-  };
-  return throughputs[type] || 1000;
 } 

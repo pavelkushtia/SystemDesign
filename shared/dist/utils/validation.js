@@ -9,10 +9,7 @@ export function validateData(schema, data) {
     }
     catch (error) {
         if (error instanceof z.ZodError) {
-            const errorMessage = error.errors
-                .map(err => `${err.path.join('.')}: ${err.message}`)
-                .join(', ');
-            throw new ValidationError(`Validation failed: ${errorMessage}`);
+            throw new ValidationError('Validation failed', error.errors);
         }
         throw error;
     }
@@ -92,4 +89,11 @@ export function validateK8sName(name) {
 export function validateDockerImageName(imageName) {
     const dockerImageRegex = /^[a-z0-9]+(?:[._-][a-z0-9]+)*(?:\/[a-z0-9]+(?:[._-][a-z0-9]+)*)*(?::[a-zA-Z0-9._-]+)?$/;
     return dockerImageRegex.test(imageName);
+}
+export function safeValidation(schema, data) {
+    const result = schema.safeParse(data);
+    if (result.success) {
+        return { success: true, data: result.data };
+    }
+    return { success: false, errors: result.error.errors };
 }

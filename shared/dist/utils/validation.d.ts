@@ -39,4 +39,11 @@ export declare function validateK8sName(name: string): boolean;
  * Validate Docker image name
  */
 export declare function validateDockerImageName(imageName: string): boolean;
+export declare function safeValidation<T>(schema: z.ZodSchema<T>, data: unknown): {
+    success: true;
+    data: T;
+} | {
+    success: false;
+    errors: z.ZodIssue[];
+};
 //# sourceMappingURL=validation.d.ts.map
