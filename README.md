@@ -15,38 +15,66 @@ ScaleSim bridges the gap between system design and reality by providing a **visu
 - **ML Model & Service Builders** with visual programming
 - **Performance Simulation** with real-time metrics
 - **Production Deployment** with auto-generated Infrastructure as Code
+- **User Authentication & Project Management** with multi-provider OAuth
+- **Collaborative Workspaces** with user-specific project organization
 
 ## ✨ Key Features
+
+### 🔐 User Authentication & Management
+- **Multi-Provider OAuth**: Google, LinkedIn, GitHub, Facebook sign-in
+- **Email/Password Authentication**: Traditional login with secure password hashing
+- **User Profiles**: Customizable profiles with preferences and settings
+- **Session Management**: JWT-based authentication with refresh tokens
+- **Account Security**: Password reset, email verification, 2FA support
+
+### 👥 Project Management & Collaboration
+- **User-Specific Projects**: Personal project workspaces with full CRUD operations
+- **Project Visibility Controls**: Public/private project settings
+- **Project Metadata Structure**: Comprehensive project information storage
+- **Collaborative Features**: Project sharing and team workspace capabilities
+- **Version Control**: Project versioning and change tracking
+- **Public Project Discovery**: Browse and fork public projects from the community
+
+### 📊 Personalized Dashboard
+- **User-Specific Statistics**: Personal project count, simulation runs, deployments
+- **Recent Projects**: Quick access to recently modified projects
+- **Activity Timeline**: Track your design and development activities
+- **Public Project Showcase**: Discover trending public projects
+- **Usage Analytics**: Personal usage insights and recommendations
 
 ### 🎨 Visual System Designer
 - **Drag & Drop Interface** with React Flow
 - **32+ Component Types**: Load balancers, databases, ML models, microservices
 - **Real-time Collaboration** with WebSocket synchronization
 - **Pattern Library**: Pre-built architecture patterns (microservices, ML pipelines, etc.)
+- **Project-Specific Components**: Save and reuse custom components
 
 ### 🔧 Code Generation & Builders
 - **Service Builders**: Spring Boot, Django, Express, FastAPI, Flask, Laravel
 - **ML Model Builders**: PyTorch, TensorFlow, Scikit-learn with visual layer design
 - **API Designers**: Visual endpoint creation with automatic validation
 - **Infrastructure as Code**: Kubernetes, Docker Compose, Terraform generation
+- **Project-Integrated Generation**: All generated code tied to user projects
 
 ### 📊 Performance Simulation Engine
 - **Real-time Performance Metrics**: Latency, throughput, resource utilization
 - **Load Testing Simulation**: Traffic patterns, failure scenarios
 - **Bottleneck Detection**: AI-powered recommendations
 - **Cost Estimation**: Multi-cloud pricing analysis
+- **User Simulation History**: Track and compare simulation results
 
 ### 🚢 Deployment Automation
 - **Multi-target Deployment**: Kubernetes, Docker, AWS ECS, GCP GKE, Azure AKS
 - **Environment Management**: Development, staging, production configs
 - **Monitoring Integration**: Prometheus, Grafana, custom dashboards
 - **GitOps Integration**: Automated CI/CD pipeline generation
+- **Deployment Tracking**: User-specific deployment history and status
 
 ### 🤖 AI-Powered Features
 - **Smart Recommendations**: Architecture best practices and optimizations
 - **Code Generation**: Context-aware boilerplate and documentation
 - **Pattern Matching**: Automatic pattern detection and suggestions
-- **Anomaly Detection**: Performance and security issue identification
+- **User-Personalized AI**: Learning from user preferences and history
 
 ## 🏗️ Three-Tier Architecture
 
@@ -390,3 +418,358 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 *Built with ❤️ for the distributed systems community*
 
 </div>
+
+## 🔐 User Authentication Implementation Plan
+
+### Phase 1: Core Authentication System
+
+#### 1.1 Database Schema
+```sql
+-- Users table
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT,
+  first_name TEXT,
+  last_name TEXT,
+  avatar_url TEXT,
+  email_verified BOOLEAN DEFAULT FALSE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- OAuth providers table
+CREATE TABLE oauth_providers (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  provider TEXT NOT NULL, -- 'google', 'github', 'linkedin', 'facebook'
+  provider_id TEXT NOT NULL,
+  access_token TEXT,
+  refresh_token TEXT,
+  expires_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- User sessions table
+CREATE TABLE user_sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  refresh_token TEXT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- User preferences table
+CREATE TABLE user_preferences (
+  user_id TEXT PRIMARY KEY,
+  theme TEXT DEFAULT 'light',
+  notifications BOOLEAN DEFAULT TRUE,
+  public_profile BOOLEAN DEFAULT FALSE,
+  default_project_visibility TEXT DEFAULT 'private',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+```
+
+#### 1.2 Backend Authentication APIs
+```typescript
+// Authentication routes
+POST /api/auth/register         // Email/password registration
+POST /api/auth/login           // Email/password login
+POST /api/auth/logout          // Logout and invalidate tokens
+POST /api/auth/refresh         // Refresh access token
+POST /api/auth/forgot-password // Password reset request
+POST /api/auth/reset-password  // Reset password with token
+
+// OAuth routes
+GET  /api/auth/oauth/:provider  // Initiate OAuth flow
+GET  /api/auth/oauth/:provider/callback // OAuth callback
+POST /api/auth/oauth/link      // Link OAuth account to existing user
+
+// User management routes
+GET  /api/users/profile        // Get current user profile
+PUT  /api/users/profile        // Update user profile
+GET  /api/users/preferences    // Get user preferences
+PUT  /api/users/preferences    // Update user preferences
+```
+
+#### 1.3 Frontend Authentication Components
+```tsx
+// Authentication pages
+- LoginPage.tsx           // HackerRank-style login form
+- RegisterPage.tsx        // User registration form
+- ForgotPasswordPage.tsx  // Password reset request
+- ResetPasswordPage.tsx   // Password reset form
+- OAuthCallback.tsx       // OAuth callback handler
+
+// Authentication components
+- AuthProvider.tsx        // Authentication context provider
+- ProtectedRoute.tsx      // Route protection wrapper
+- UserMenu.tsx           // User dropdown menu
+- ProfileModal.tsx       // User profile editor
+```
+
+### Phase 2: OAuth Integration
+
+#### 2.1 OAuth Provider Configuration
+```typescript
+// OAuth providers configuration
+const oauthProviders = {
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    scope: 'openid profile email',
+    callbackURL: '/api/auth/oauth/google/callback'
+  },
+  github: {
+    clientId: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    scope: 'user:email',
+    callbackURL: '/api/auth/oauth/github/callback'
+  },
+  linkedin: {
+    clientId: process.env.LINKEDIN_CLIENT_ID,
+    clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+    scope: 'r_liteprofile r_emailaddress',
+    callbackURL: '/api/auth/oauth/linkedin/callback'
+  },
+  facebook: {
+    clientId: process.env.FACEBOOK_CLIENT_ID,
+    clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+    scope: 'email',
+    callbackURL: '/api/auth/oauth/facebook/callback'
+  }
+};
+```
+
+#### 2.2 HackerRank-Style Login Interface
+```tsx
+// LoginPage component features
+- Clean, professional design matching HackerRank
+- Email/password form with validation
+- Social login buttons for all 4 providers
+- "Remember me" checkbox
+- Forgot password link
+- Registration link
+- Loading states and error handling
+- Responsive design for mobile/desktop
+```
+
+## 👥 User Management & Project System
+
+### Phase 3: Project Management Schema
+
+#### 3.1 Enhanced Database Schema
+```sql
+-- Update systems table to include user ownership
+ALTER TABLE systems ADD COLUMN user_id TEXT REFERENCES users(id);
+ALTER TABLE systems ADD COLUMN visibility TEXT DEFAULT 'private' CHECK (visibility IN ('private', 'public', 'unlisted'));
+ALTER TABLE systems ADD COLUMN fork_count INTEGER DEFAULT 0;
+ALTER TABLE systems ADD COLUMN star_count INTEGER DEFAULT 0;
+ALTER TABLE systems ADD COLUMN original_system_id TEXT REFERENCES systems(id); -- For forks
+
+-- Project metadata table
+CREATE TABLE project_metadata (
+  system_id TEXT PRIMARY KEY,
+  readme_content TEXT,
+  documentation TEXT,
+  changelog TEXT,
+  keywords TEXT, -- JSON array
+  license TEXT DEFAULT 'MIT',
+  repository_url TEXT,
+  demo_url TEXT,
+  screenshots TEXT, -- JSON array of URLs
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (system_id) REFERENCES systems (id) ON DELETE CASCADE
+);
+
+-- Project stars table
+CREATE TABLE project_stars (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  system_id TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  FOREIGN KEY (system_id) REFERENCES systems (id) ON DELETE CASCADE,
+  UNIQUE(user_id, system_id)
+);
+
+-- Project collaborators table
+CREATE TABLE project_collaborators (
+  id TEXT PRIMARY KEY,
+  system_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  role TEXT DEFAULT 'collaborator' CHECK (role IN ('owner', 'admin', 'collaborator', 'viewer')),
+  permissions TEXT, -- JSON object
+  invited_by TEXT,
+  joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (system_id) REFERENCES systems (id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  FOREIGN KEY (invited_by) REFERENCES users (id),
+  UNIQUE(system_id, user_id)
+);
+
+-- User activity log
+CREATE TABLE user_activities (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  activity_type TEXT NOT NULL, -- 'create', 'update', 'simulate', 'deploy', 'fork', 'star'
+  resource_type TEXT NOT NULL, -- 'system', 'pattern', 'simulation', 'deployment'
+  resource_id TEXT NOT NULL,
+  metadata TEXT, -- JSON object with additional details
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- Update other tables to include user_id
+ALTER TABLE simulations ADD COLUMN user_id TEXT REFERENCES users(id);
+ALTER TABLE deployments ADD COLUMN user_id TEXT REFERENCES users(id);
+ALTER TABLE service_builders ADD COLUMN user_id TEXT REFERENCES users(id);
+ALTER TABLE ml_models ADD COLUMN user_id TEXT REFERENCES users(id);
+```
+
+#### 3.2 Project Management APIs
+```typescript
+// Project CRUD operations
+GET    /api/projects                    // List user's projects
+POST   /api/projects                    // Create new project
+GET    /api/projects/:id                // Get project details
+PUT    /api/projects/:id                // Update project
+DELETE /api/projects/:id                // Delete project
+POST   /api/projects/:id/fork           // Fork a public project
+POST   /api/projects/:id/star           // Star/unstar project
+
+// Project metadata management
+GET    /api/projects/:id/metadata       // Get project metadata
+PUT    /api/projects/:id/metadata       // Update project metadata
+GET    /api/projects/:id/collaborators  // List project collaborators
+POST   /api/projects/:id/collaborators  // Invite collaborator
+DELETE /api/projects/:id/collaborators/:userId // Remove collaborator
+
+// Public project discovery
+GET    /api/projects/public             // List public projects
+GET    /api/projects/trending           // Trending public projects
+GET    /api/projects/search             // Search public projects
+GET    /api/users/:id/projects/public   // User's public projects
+```
+
+### Phase 4: Enhanced Dashboard
+
+#### 4.1 User-Specific Dashboard Components
+```tsx
+// Dashboard sections for authenticated users
+- PersonalStats: User's project count, simulations, deployments
+- RecentProjects: Recently modified user projects
+- ActivityFeed: User's recent activities
+- QuickActions: Context-aware quick actions
+- PublicProjectRecommendations: Suggested public projects
+
+// Dashboard sections for anonymous users
+- PlatformStats: Total platform statistics
+- FeaturedProjects: Curated public projects
+- GettingStarted: Tutorial and onboarding
+- LoginPrompt: Encouraging registration
+```
+
+#### 4.2 Settings & Preferences
+```tsx
+// Enhanced settings page
+- AccountSettings: Profile, email, password
+- ProjectSettings: Default visibility, collaboration preferences
+- AppearanceSettings: Theme, layout preferences
+- NotificationSettings: Email notifications, activity alerts
+- PrivacySettings: Profile visibility, data preferences
+- IntegrationsSettings: Connected OAuth accounts, API keys
+```
+
+## 🚀 Implementation Timeline
+
+### Week 1: Foundation
+- [ ] Update database schema with user tables
+- [ ] Implement JWT authentication middleware
+- [ ] Create user registration/login backend APIs
+- [ ] Design and implement login/register UI components
+
+### Week 2: OAuth Integration
+- [ ] Set up OAuth providers (Google, GitHub, LinkedIn, Facebook)
+- [ ] Implement OAuth callback handling
+- [ ] Create HackerRank-style login interface
+- [ ] Test authentication flows
+
+### Week 3: User Management
+- [ ] Implement user profile management
+- [ ] Create user preferences system
+- [ ] Update all existing routes to include user context
+- [ ] Implement user session management
+
+### Week 4: Project Management
+- [ ] Update project schema with user ownership
+- [ ] Implement project CRUD operations
+- [ ] Create project visibility controls
+- [ ] Add project collaboration features
+
+### Week 5: Dashboard Enhancement
+- [ ] Update dashboard with user-specific data
+- [ ] Implement activity tracking
+- [ ] Create public project discovery
+- [ ] Add project statistics and analytics
+
+### Week 6: Polish & Testing
+- [ ] Comprehensive testing of authentication flows
+- [ ] UI/UX improvements and responsive design
+- [ ] Performance optimization
+- [ ] Documentation updates
+
+## 📊 Project Metadata Structure
+
+### Comprehensive Project Definition
+```typescript
+interface ProjectMetadata {
+  // Basic information
+  id: string;
+  name: string;
+  description: string;
+  readme: string;
+  
+  // Ownership and visibility
+  userId: string;
+  visibility: 'private' | 'public' | 'unlisted';
+  license: string;
+  
+  // Architecture components
+  components: ComponentConfig[];
+  connections: ConnectionConfig[];
+  patterns: string[];
+  
+  // Generated artifacts
+  serviceBuilders: ServiceBuilderConfig[];
+  mlModels: MLModelConfig[];
+  deployments: DeploymentConfig[];
+  simulations: SimulationConfig[];
+  
+  // Project files and code
+  generatedCode: {
+    [filename: string]: string;
+  };
+  documentation: DocumentationSection[];
+  
+  // Collaboration
+  collaborators: ProjectCollaborator[];
+  stars: number;
+  forks: number;
+  
+  // Metadata
+  tags: string[];
+  screenshots: string[];
+  demoUrl?: string;
+  repositoryUrl?: string;
+  
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
