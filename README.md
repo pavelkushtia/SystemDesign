@@ -104,7 +104,7 @@ ScaleSim bridges the gap between system design and reality by providing a **visu
 - **npm** 9.x or higher
 - **Docker** & **Docker Compose** (optional)
 
-### Installation
+### Installation & Setup
 
 1. **Clone the repository**
 ```bash
@@ -112,20 +112,73 @@ git clone https://github.com/scalesim/scalesim.git
 cd scalesim
 ```
 
-2. **Install dependencies**
+2. **Run the setup script (recommended)**
 ```bash
-npm run setup
+./setup.sh
 ```
+*This script will:*
+- Install all dependencies for root, shared, backend, and frontend
+- Build the shared package
+- Verify Node.js and npm versions
+- Clean any previous installations
 
 3. **Start the development environment**
 ```bash
-npm run dev
+./start.sh
 ```
+*This script will:*
+- Stop any existing ScaleSim processes
+- Check if dependencies are installed
+- Start both frontend and backend services
+- Display service URLs
 
 4. **Access the application**
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:3001
 - API Documentation: http://localhost:3001/api/docs
+
+### Alternative Manual Setup
+
+If you prefer manual setup:
+```bash
+# Install dependencies
+npm run setup
+
+# Start development server
+npm run dev
+
+# Stop all services
+npm run stop
+```
+
+### Development Scripts
+
+- `./setup.sh` or `npm run setup` - Full project setup
+- `./start.sh` or `npm run start` - Start development server (with auto-restart)
+- `./stop.sh` or `npm run stop` - Stop all services
+- `npm run dev` - Start development server (manual)
+- `npm run build` - Build all packages for production
+
+### 🔄 Git Workflow & Collaboration
+
+**For new team members:**
+1. Clone the repository
+2. Run `./setup.sh` to install all dependencies
+3. Run `./start.sh` to start development
+
+**Files automatically ignored by Git:**
+- `node_modules/` directories (all packages)
+- `dist/` and `build/` outputs
+- `.env` files and environment variables
+- Database files (`*.db`, `data/`)
+- Log files (`*.log`)
+- Editor files (`.vscode/`, `.idea/`)
+
+**The setup script handles:**
+- Installing dependencies for all workspaces
+- Building the shared package that other services depend on
+- Cleaning previous installations
+- Verifying system requirements
 
 ### Docker Setup (Recommended)
 

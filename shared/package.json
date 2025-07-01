@@ -1,74 +1,28 @@
 {
-  "name": "scalesim",
+  "name": "@scalesim/shared",
   "version": "1.0.0",
-  "description": "Visual Distributed Systems & ML Infrastructure Design, Simulation & Deployment Platform",
-  "private": true,
-  "workspaces": [
-    "frontend",
-    "backend",
-    "shared",
-    "patterns",
-    "simulation",
-    "builders",
-    "deployment",
-    "ai-assistant"
-  ],
+  "description": "Shared types and utilities for ScaleSim",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
-    "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
-    "build:shared": "cd shared && npm run build",
-    "build:backend": "cd backend && npm run build",
-    "build:frontend": "cd frontend && npm run build",
-    "test": "npm run test:backend && npm run test:frontend",
-    "test:backend": "cd backend && npm test",
-    "test:frontend": "cd frontend && npm test",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up",
-    "docker:down": "docker-compose down",
-    "setup": "npm install && npm run setup:workspaces",
-    "setup:workspaces": "npm run setup:shared && npm run setup:backend && npm run setup:frontend && npm run setup:patterns && npm run setup:simulation && npm run setup:builders && npm run setup:deployment && npm run setup:ai",
-    "setup:shared": "cd shared && npm install",
-    "setup:backend": "cd backend && npm install",
-    "setup:frontend": "cd frontend && npm install",
-    "setup:patterns": "cd patterns && npm install",
-    "setup:simulation": "cd simulation && npm install",
-    "setup:builders": "cd builders && npm install",
-    "setup:deployment": "cd deployment && npm install",
-    "setup:ai": "cd ai-assistant && npm install"
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.8.0",
-    "concurrently": "^8.2.2",
-    "eslint": "^8.51.0",
-    "lerna": "^7.4.2",
-    "prettier": "^3.0.3",
+    "@types/uuid": "^9.0.6",
     "typescript": "^5.2.2"
   },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/scalesim/scalesim.git"
-  },
-  "keywords": [
-    "distributed-systems",
-    "machine-learning",
-    "microservices",
-    "visual-programming",
-    "simulation",
-    "kubernetes",
-    "mlops",
-    "system-design"
-  ],
-  "author": "ScaleSim Team",
-  "license": "MIT",
-  "dependencies": {
-    "@tailwindcss/aspect-ratio": "^0.4.2",
-    "@tailwindcss/forms": "^0.5.10",
-    "@tailwindcss/typography": "^0.5.16"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   }
 }
