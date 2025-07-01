@@ -51,10 +51,21 @@ stop_port_processes() {
         print_warning "$service_name is running on port $port. Stopping..."
         local pids=$(lsof -ti:$port)
         if [ ! -z "$pids" ]; then
-            kill -9 $pids 2>/dev/null || true
-            sleep 2
+            # First try graceful shutdown
+            kill -TERM $pids 2>/dev/null || true
+            sleep 3
+            
+            # If still running, force kill
+            if check_port $port; then
+                print_warning "Graceful shutdown failed, force killing..."
+                kill -9 $pids 2>/dev/null || true
+                sleep 2
+            fi
+            
+            # Final check
             if check_port $port; then
                 print_error "Failed to stop $service_name on port $port"
+                print_warning "You may need to manually kill the process or restart your system"
                 return 1
             else
                 print_success "Stopped $service_name on port $port"
@@ -65,20 +76,26 @@ stop_port_processes() {
     fi
 }
 
-# Stop any existing ScaleSim processes
+# Stop any existing ScaleSim processes - more comprehensive approach
 print_status "Stopping any existing ScaleSim processes..."
 
-# Stop processes by name
+# Stop processes by pattern matching
 pkill -f "concurrently.*dev" 2>/dev/null || true
-pkill -f "tsx.*watch" 2>/dev/null || true  
-pkill -f "vite" 2>/dev/null || true
+pkill -f "tsx.*watch.*index.ts" 2>/dev/null || true  
+pkill -f "vite.*--port" 2>/dev/null || true
+pkill -f "node.*dev" 2>/dev/null || true
+
+# Also stop any node processes in these directories
+pkill -f "$(pwd)/backend" 2>/dev/null || true
+pkill -f "$(pwd)/frontend" 2>/dev/null || true
 
 # Stop processes on specific ports
 stop_port_processes 3000 "Frontend (Vite)"
 stop_port_processes 3001 "Backend (Express)"
+stop_port_processes 3002 "Frontend (Vite - alt port)"
 
-# Wait a moment for processes to fully stop
-sleep 3
+# Wait longer for processes to fully stop
+sleep 5
 
 # Check if shared package is built
 if [ ! -d "shared/dist" ] || [ ! -f "shared/dist/index.js" ]; then

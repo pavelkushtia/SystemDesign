@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # ScaleSim Stop Script
-# This script stops all running ScaleSim services
+# This script stops all ScaleSim development processes
 
-echo "🛑 Stopping ScaleSim Services"
-echo "=============================="
+set -e  # Exit on any error
+
+echo "🛑 Stopping ScaleSim Development Server"
+echo "========================================"
 
 # Colors for output
 RED='\033[0;31m'
@@ -40,75 +42,55 @@ check_port() {
     fi
 }
 
-# Function to stop processes on specific ports
-stop_port_processes() {
+# Function to force stop processes on specific ports
+force_stop_port() {
     local port=$1
     local service_name=$2
     
     if check_port $port; then
-        print_status "Stopping $service_name on port $port..."
-        local pids=$(lsof -ti:$port)
+        print_warning "Stopping $service_name on port $port..."
+        local pids=$(lsof -ti:$port 2>/dev/null || true)
         if [ ! -z "$pids" ]; then
-            # First try graceful shutdown
-            kill $pids 2>/dev/null || true
-            sleep 3
-            
-            # If still running, force kill
-            if check_port $port; then
-                print_status "Force killing $service_name on port $port..."
-                kill -9 $pids 2>/dev/null || true
-                sleep 2
-            fi
+            # Force kill immediately
+            kill -9 $pids 2>/dev/null || true
+            sleep 1
             
             if check_port $port; then
                 print_error "Failed to stop $service_name on port $port"
-                return 1
             else
-                print_success "Stopped $service_name"
+                print_success "Stopped $service_name on port $port"
             fi
         fi
     else
-        print_status "$service_name is not running on port $port"
+        print_status "Port $port is already free"
     fi
 }
 
-# Stop processes by name patterns
-print_status "Stopping ScaleSim processes..."
+print_status "Stopping all ScaleSim processes..."
 
-# Stop concurrently processes
-if pgrep -f "concurrently.*dev" > /dev/null; then
-    print_status "Stopping concurrently processes..."
-    pkill -TERM -f "concurrently.*dev" 2>/dev/null || true
-    sleep 2
-    pkill -9 -f "concurrently.*dev" 2>/dev/null || true
-fi
+# Stop processes by pattern matching - comprehensive approach
+print_status "Killing process patterns..."
+pkill -f "concurrently.*scalesim" 2>/dev/null || true
+pkill -f "tsx.*watch.*index.ts" 2>/dev/null || true
+pkill -f "vite.*frontend" 2>/dev/null || true
+pkill -f "npm.*dev.*scalesim" 2>/dev/null || true
 
-# Stop tsx processes
-if pgrep -f "tsx.*watch" > /dev/null; then
-    print_status "Stopping tsx processes..."
-    pkill -TERM -f "tsx.*watch" 2>/dev/null || true
-    sleep 2
-    pkill -9 -f "tsx.*watch" 2>/dev/null || true
-fi
+# Stop any node processes in ScaleSim directories
+pkill -f "$(pwd)/backend" 2>/dev/null || true
+pkill -f "$(pwd)/frontend" 2>/dev/null || true
+pkill -f "scalesim.*dev" 2>/dev/null || true
 
-# Stop vite processes
-if pgrep -f "vite" > /dev/null; then
-    print_status "Stopping vite processes..."
-    pkill -TERM -f "vite" 2>/dev/null || true
-    sleep 2
-    pkill -9 -f "vite" 2>/dev/null || true
-fi
+# Force stop processes on specific ports
+force_stop_port 3000 "Frontend"
+force_stop_port 3001 "Backend"
+force_stop_port 3002 "Frontend (alt)"
 
-# Stop processes on specific ports
-stop_port_processes 3000 "Frontend (Vite)"
-stop_port_processes 3001 "Backend (Express)"
+# Wait for processes to terminate
+sleep 3
 
-# Final check
-sleep 2
-if check_port 3000 || check_port 3001; then
-    print_warning "Some services may still be running. You may need to manually kill remaining processes."
-else
-    print_success "All ScaleSim services stopped successfully!"
-fi
+# Final cleanup - kill any remaining ScaleSim processes
+print_status "Final cleanup..."
+ps aux | grep -E "(tsx|vite|concurrently)" | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true
 
-print_status "ScaleSim shutdown complete." 
+print_success "All ScaleSim processes stopped"
+print_status "Ports 3000, 3001, and 3002 should now be available" 
