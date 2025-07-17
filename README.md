@@ -1,4 +1,4 @@
-# 🚀 ScaleSim - Visual Studio for Distributed Systems
+# 🚀 SystemDesign - Visual Studio for Distributed Systems
 
 > **The first comprehensive platform for designing, simulating, and deploying distributed systems and ML infrastructure visually.**
 
@@ -9,7 +9,7 @@
 
 ## 🌟 Vision
 
-ScaleSim bridges the gap between system design and reality by providing a **visual, code-first platform** that combines:
+SystemDesign bridges the gap between system design and reality by providing a **visual, code-first platform** that combines:
 
 - **System Architecture Design** with drag-and-drop components
 - **ML Model & Service Builders** with visual programming
@@ -108,8 +108,8 @@ ScaleSim bridges the gap between system design and reality by providing a **visu
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/scalesim/scalesim.git
-cd scalesim
+git clone https://github.com/SystemDesign/SystemDesign.git
+cd SystemDesign
 ```
 
 2. **Run the setup script (recommended)**
@@ -127,7 +127,7 @@ cd scalesim
 ./start.sh
 ```
 *This script will:*
-- Stop any existing ScaleSim processes
+- Stop any existing SystemDesign processes
 - Check if dependencies are installed
 - Start both frontend and backend services
 - Display service URLs
@@ -206,7 +206,7 @@ docker-compose --profile production up -d
 ## 📁 Project Structure
 
 ```
-scalesim/
+SystemDesign/
 ├── 📁 shared/           # Shared types and utilities
 ├── 📁 backend/          # Node.js Express API server  
 ├── 📁 frontend/         # React TypeScript application
@@ -224,7 +224,7 @@ scalesim/
 ### 1. Design a Microservices Architecture
 ```typescript
 // Create a new system design
-const system = await scalesim.createSystem({
+const system = await SystemDesign.createSystem({
   name: "E-commerce Platform",
   mode: "heavy", // Use cloud-powered simulation
   components: [
@@ -237,14 +237,14 @@ const system = await scalesim.createSystem({
 });
 
 // Apply microservices patterns
-await scalesim.patterns.apply("api-gateway-pattern", system.id);
-await scalesim.patterns.apply("circuit-breaker-pattern", system.id);
+await SystemDesign.patterns.apply("api-gateway-pattern", system.id);
+await SystemDesign.patterns.apply("circuit-breaker-pattern", system.id);
 ```
 
 ### 2. Build and Deploy ML Pipeline
 ```typescript
 // Create ML model builder
-const mlModel = await scalesim.builders.createMLModel({
+const mlModel = await SystemDesign.builders.createMLModel({
   name: "Recommendation System",
   framework: "pytorch",
   taskType: "recommendation",
@@ -259,10 +259,10 @@ const mlModel = await scalesim.builders.createMLModel({
 });
 
 // Generate training and serving code
-const code = await scalesim.builders.generateCode(mlModel.id);
+const code = await SystemDesign.builders.generateCode(mlModel.id);
 
 // Deploy to Kubernetes
-const deployment = await scalesim.deployment.create({
+const deployment = await SystemDesign.deployment.create({
   systemId: system.id,
   target: "kubernetes",
   environment: "production"
@@ -272,7 +272,7 @@ const deployment = await scalesim.deployment.create({
 ### 3. Run Performance Simulation
 ```typescript
 // Configure simulation parameters
-const simulation = await scalesim.simulation.run({
+const simulation = await SystemDesign.simulation.run({
   systemId: system.id,
   duration: 300, // 5 minutes
   users: 1000,
@@ -281,7 +281,7 @@ const simulation = await scalesim.simulation.run({
 });
 
 // Get performance metrics
-const metrics = await scalesim.simulation.getResults(simulation.id);
+const metrics = await SystemDesign.simulation.getResults(simulation.id);
 console.log(`Average latency: ${metrics.latency}ms`);
 console.log(`Throughput: ${metrics.throughput} RPS`);
 console.log(`Error rate: ${metrics.errorRate}%`);
@@ -335,7 +335,7 @@ console.log(`Error rate: ${metrics.errorRate}%`);
 # Backend Configuration
 PORT=3001
 NODE_ENV=development
-DATABASE_PATH=./data/scalesim.db
+DATABASE_PATH=./data/SystemDesign.db
 
 # AI Features (Optional)
 OPENAI_API_KEY=your-openai-key
@@ -353,7 +353,7 @@ AZURE_SUBSCRIPTION_ID=your-azure-subscription
 Create custom patterns by extending the base pattern interface:
 
 ```typescript
-import { Pattern, PatternCategory } from '@scalesim/shared';
+import { Pattern, PatternCategory } from '@SystemDesign/shared';
 
 export const customPattern: Pattern = {
   id: 'custom-ml-pipeline',
@@ -457,16 +457,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 💬 Support
 
-- 📧 **Email**: support@scalesim.app  
-- 💬 **Discord**: [ScaleSim Community](https://discord.gg/scalesim)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/scalesim/scalesim/issues)
-- 📖 **Docs**: [Documentation Site](https://docs.scalesim.app)
+- 📧 **Email**: support@SystemDesign.app  
+- 💬 **Discord**: [SystemDesign Community](https://discord.gg/SystemDesign)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/SystemDesign/SystemDesign/issues)
+- 📖 **Docs**: [Documentation Site](https://docs.SystemDesign.app)
 
 ---
 
 <div align="center">
 
-**[⭐ Star us on GitHub](https://github.com/scalesim/scalesim) | [🚀 Try ScaleSim](https://app.scalesim.io) | [📚 Read the Docs](https://docs.scalesim.app)**
+**[⭐ Star us on GitHub](https://github.com/SystemDesign/SystemDesign) | [🚀 Try SystemDesign](https://app.SystemDesign.io) | [📚 Read the Docs](https://docs.SystemDesign.app)**
 
 *Built with ❤️ for the distributed systems community*
 
