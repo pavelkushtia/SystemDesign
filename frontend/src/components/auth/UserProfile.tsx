@@ -30,8 +30,9 @@ const UserProfile: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/auth');
     setIsOpen(false);
+    // Use window.location for immediate redirect to bypass auth checks
+    window.location.href = '/auth';
   };
 
   const handleProfileClick = () => {

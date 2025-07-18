@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface User {
   id: string;
@@ -22,7 +22,78 @@ export const useAuth = () => {
     isLoading: true
   });
 
+  // Use ref to prevent multiple simultaneous auth checks
+  const isCheckingAuthRef = useRef(false);
+  const hasInitializedRef = useRef(false);
+
+  // Simple logout function with no dependencies
+  const logout = useCallback(() => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    setAuthState({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false
+    });
+  }, []);
+
+  // Token refresh function - stable with no external dependencies
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    const refreshTokenValue = localStorage.getItem('refreshToken');
+    
+    if (!refreshTokenValue) {
+      return false;
+    }
+
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ refresh_token: refreshTokenValue })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('accessToken', data.access_token);
+        
+        if (data.refresh_token) {
+          localStorage.setItem('refreshToken', data.refresh_token);
+        }
+        
+        return true;
+      } else {
+        // Clear tokens on refresh failure
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false
+      });
+      return false;
+    }
+  }, []);
+
+  // Check auth status - now includes proper dependencies
   const checkAuthStatus = useCallback(async () => {
+    // Prevent multiple simultaneous auth checks
+    if (isCheckingAuthRef.current) {
+      return;
+    }
+
     const accessToken = localStorage.getItem('accessToken');
     
     if (!accessToken) {
@@ -34,6 +105,8 @@ export const useAuth = () => {
       return;
     }
 
+    isCheckingAuthRef.current = true;
+
     try {
       const response = await fetch('/api/auth/me', {
         headers: {
@@ -42,78 +115,56 @@ export const useAuth = () => {
       });
 
       if (response.ok) {
-        const userData = await response.json();
+        const data = await response.json();
+        const userData = data.data || data;
         setAuthState({
           user: userData,
           isAuthenticated: true,
           isLoading: false
         });
+      } else if (response.status === 401) {
+        // Token expired - try refresh ONCE
+        const refreshSuccess = await refreshToken();
+        if (refreshSuccess) {
+          // Retry with new token (only once)
+          const newAccessToken = localStorage.getItem('accessToken');
+          if (newAccessToken) {
+            const retryResponse = await fetch('/api/auth/me', {
+              headers: {
+                'Authorization': `Bearer ${newAccessToken}`
+              }
+            });
+            
+            if (retryResponse.ok) {
+              const retryData = await retryResponse.json();
+              const userData = retryData.data || retryData;
+              setAuthState({
+                user: userData,
+                isAuthenticated: true,
+                isLoading: false
+              });
+            } else {
+              logout();
+            }
+          }
+        }
+      } else if (response.status === 429) {
+        // Rate limit - don't retry immediately
+        console.warn('Rate limit hit during auth check');
+        setAuthState(prev => ({
+          ...prev,
+          isLoading: false
+        }));
       } else {
-        // Token might be expired, try to refresh
-        await refreshToken();
+        logout();
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       logout();
+    } finally {
+      isCheckingAuthRef.current = false;
     }
-  }, []);
-
-  const refreshToken = useCallback(async () => {
-    const refreshTokenValue = localStorage.getItem('refreshToken');
-    
-    if (!refreshTokenValue) {
-      logout();
-      return false;
-    }
-
-    try {
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ refreshToken: refreshTokenValue })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('accessToken', data.access_token);
-        
-        if (data.refresh_token) {
-          localStorage.setItem('refreshToken', data.refresh_token);
-        }
-        
-        // Check auth status again with new token
-        await checkAuthStatus();
-        return true;
-      } else {
-        logout();
-        return false;
-      }
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      logout();
-      return false;
-    }
-  }, []);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    setAuthState({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false
-    });
-
-    // Optionally notify the server about logout
-    fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-      }
-    }).catch(console.error);
-  }, []);
+  }, [refreshToken, logout]); // Include dependencies to prevent stale closures
 
   const login = useCallback(async (email: string, password: string) => {
     try {
@@ -125,16 +176,42 @@ export const useAuth = () => {
         body: JSON.stringify({ email, password })
       });
 
-      const data = await response.json();
+      // Read response body only once
+      const responseText = await response.text();
+      
+      if (response.status === 429) {
+        return { 
+          success: false, 
+          error: responseText || 'Too many requests. Please try again later.' 
+        };
+      }
+
+      // Parse JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        return { 
+          success: false, 
+          error: responseText || 'Login failed due to server error' 
+        };
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');
       }
 
+      // Store tokens
       localStorage.setItem('accessToken', data.access_token);
       localStorage.setItem('refreshToken', data.refresh_token);
       
-      await checkAuthStatus();
+      // Update auth state synchronously
+      setAuthState({
+        user: data.user,
+        isAuthenticated: true,
+        isLoading: false
+      });
+      
       return { success: true };
     } catch (error) {
       return { 
@@ -142,7 +219,7 @@ export const useAuth = () => {
         error: error instanceof Error ? error.message : 'Login failed' 
       };
     }
-  }, [checkAuthStatus]);
+  }, []);
 
   const register = useCallback(async (userData: {
     email: string;
@@ -156,19 +233,50 @@ export const useAuth = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(userData)
+        body: JSON.stringify({
+          ...userData,
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          terms_accepted: true
+        })
       });
 
-      const data = await response.json();
+      // Read response body only once
+      const responseText = await response.text();
+      
+      if (response.status === 429) {
+        return { 
+          success: false, 
+          error: responseText || 'Too many requests. Please try again later.' 
+        };
+      }
+
+      // Parse JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        return { 
+          success: false, 
+          error: responseText || 'Registration failed due to server error' 
+        };
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Registration failed');
       }
 
+      // Store tokens
       localStorage.setItem('accessToken', data.access_token);
       localStorage.setItem('refreshToken', data.refresh_token);
       
-      await checkAuthStatus();
+      // Update auth state synchronously
+      setAuthState({
+        user: data.user,
+        isAuthenticated: true,
+        isLoading: false
+      });
+      
       return { success: true };
     } catch (error) {
       return { 
@@ -176,30 +284,22 @@ export const useAuth = () => {
         error: error instanceof Error ? error.message : 'Registration failed' 
       };
     }
+  }, []);
+
+  // Initialize auth state ONCE on mount
+  useEffect(() => {
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      checkAuthStatus();
+    }
   }, [checkAuthStatus]);
 
-  // Set up automatic token refresh
-  useEffect(() => {
-    checkAuthStatus();
-
-    const interval = setInterval(() => {
-      const accessToken = localStorage.getItem('accessToken');
-      if (accessToken && authState.isAuthenticated) {
-        // Try to refresh token every 50 minutes (tokens typically expire after 1 hour)
-        refreshToken();
-      }
-    }, 50 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [checkAuthStatus, refreshToken, authState.isAuthenticated]);
-
-  // Helper function to get auth headers for API calls
+  // Helper functions
   const getAuthHeaders = useCallback((): Record<string, string> => {
     const accessToken = localStorage.getItem('accessToken');
     return accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {};
   }, []);
 
-  // Helper function to make authenticated API calls
   const authenticatedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
     const accessToken = localStorage.getItem('accessToken');
     const headers: Record<string, string> = {
@@ -212,11 +312,10 @@ export const useAuth = () => {
       headers
     });
 
-    // If we get a 401, try to refresh the token once
+    // Handle 401 with token refresh
     if (response.status === 401 && authState.isAuthenticated) {
       const refreshSuccess = await refreshToken();
       if (refreshSuccess) {
-        // Retry the request with the new token
         const newAccessToken = localStorage.getItem('accessToken');
         const newHeaders: Record<string, string> = {
           ...(options.headers as Record<string, string> || {}),
@@ -230,7 +329,7 @@ export const useAuth = () => {
     }
 
     return response;
-  }, [refreshToken, authState.isAuthenticated]);
+  }, [authState.isAuthenticated, refreshToken]);
 
   return {
     ...authState,

@@ -339,14 +339,14 @@ export declare const UserActivitySchema: z.ZodObject<{
     created_at: Date;
     user_id: string;
     activity_type: "create" | "update" | "simulate" | "deploy" | "fork" | "star" | "delete";
-    resource_type: "deployment" | "system" | "pattern" | "simulation" | "service" | "ml_model";
+    resource_type: "system" | "pattern" | "simulation" | "deployment" | "service" | "ml_model";
     resource_id: string;
     metadata?: Record<string, any> | undefined;
 }, {
     id: string;
     user_id: string;
     activity_type: "create" | "update" | "simulate" | "deploy" | "fork" | "star" | "delete";
-    resource_type: "deployment" | "system" | "pattern" | "simulation" | "service" | "ml_model";
+    resource_type: "system" | "pattern" | "simulation" | "deployment" | "service" | "ml_model";
     resource_id: string;
     created_at?: Date | undefined;
     metadata?: Record<string, any> | undefined;
@@ -969,6 +969,7 @@ export declare const ServiceBuilderConfigSchema: z.ZodObject<{
         requestSchema?: Record<string, any> | undefined;
         responseSchema?: Record<string, any> | undefined;
     }[];
+    user_id?: string | undefined;
     database?: {
         models: {
             name: string;
@@ -976,7 +977,6 @@ export declare const ServiceBuilderConfigSchema: z.ZodObject<{
         }[];
         type?: "postgresql" | "mysql" | "mongodb" | "sqlite" | undefined;
     } | undefined;
-    user_id?: string | undefined;
     generatedCode?: Record<string, string> | undefined;
     dockerConfig?: string | undefined;
     kubernetesConfig?: string | undefined;
@@ -984,13 +984,6 @@ export declare const ServiceBuilderConfigSchema: z.ZodObject<{
     id: string;
     name: string;
     framework: FrameworkType;
-    database?: {
-        type?: "postgresql" | "mysql" | "mongodb" | "sqlite" | undefined;
-        models?: {
-            name: string;
-            fields: Record<string, any>;
-        }[] | undefined;
-    } | undefined;
     user_id?: string | undefined;
     createdAt?: Date | undefined;
     updatedAt?: Date | undefined;
@@ -1002,6 +995,13 @@ export declare const ServiceBuilderConfigSchema: z.ZodObject<{
         responseSchema?: Record<string, any> | undefined;
         authentication?: boolean | undefined;
     }[] | undefined;
+    database?: {
+        type?: "postgresql" | "mysql" | "mongodb" | "sqlite" | undefined;
+        models?: {
+            name: string;
+            fields: Record<string, any>;
+        }[] | undefined;
+    } | undefined;
     generatedCode?: Record<string, string> | undefined;
     dockerConfig?: string | undefined;
     kubernetesConfig?: string | undefined;

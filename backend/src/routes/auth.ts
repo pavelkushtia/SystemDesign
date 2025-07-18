@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import passport from 'passport';
 import { 
   User, 
   LoginRequest, 
@@ -27,8 +28,12 @@ import {
   authenticateToken,
   logUserActivity
 } from '../middleware/auth';
+import { initializeOAuth } from '../middleware/oauth';
 
 const router = Router();
+
+// Initialize OAuth strategies
+initializeOAuth();
 
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
@@ -361,26 +366,52 @@ router.get('/oauth/:provider', (req: Request, res: Response, next: NextFunction)
     return;
   }
   
-  // TODO: Implement OAuth initiation
-  // For now, return not implemented
-  res.status(501).json({
-    success: false,
-    message: `OAuth authentication with ${provider} is not implemented yet`,
-    timestamp: new Date()
-  });
+  // Initiate OAuth flow using Passport
+  passport.authenticate(provider, {
+    scope: provider === 'google' ? ['profile', 'email'] :
+           provider === 'github' ? ['user:email'] :
+           provider === 'linkedin' ? ['r_emailaddress', 'r_liteprofile'] :
+           provider === 'facebook' ? ['email'] : []
+  })(req, res, next);
 });
 
 // GET /api/auth/oauth/:provider/callback - OAuth callback handler
 router.get('/oauth/:provider/callback', (req: Request, res: Response, next: NextFunction) => {
   const { provider } = req.params;
   
-  // TODO: Implement OAuth callback handling
-  // For now, return not implemented
-  res.status(501).json({
-    success: false,
-    message: `OAuth callback for ${provider} is not implemented yet`,
-    timestamp: new Date()
-  });
+  passport.authenticate(provider, { session: false }, async (err: any, user: any) => {
+    if (err || !user) {
+      return res.redirect(`/auth?error=oauth_failed&provider=${provider}`);
+    }
+    
+    try {
+      // Generate JWT tokens for the OAuth user
+      const { accessToken, refreshToken } = generateTokens(user.id);
+      
+      // Store refresh token
+      const refreshTokenId = 'refresh-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      const expiresAt = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)); // 7 days
+      
+      const insertSessionStmt = database.prepare(`
+        INSERT INTO user_sessions (id, user_id, refresh_token, expires_at)
+        VALUES (?, ?, ?, ?)
+      `);
+      insertSessionStmt.run(refreshTokenId, user.id, refreshToken, expiresAt.toISOString());
+      
+      // Log successful OAuth login
+      logUserActivity(user.id, 'login', 'user', user.id, {
+        method: 'oauth',
+        provider: provider,
+        ip: req.ip
+      });
+      
+      // Redirect to frontend with tokens
+      const redirectUrl = `/auth/callback?access_token=${accessToken}&refresh_token=${refreshToken}`;
+      res.redirect(redirectUrl);
+    } catch (error) {
+      res.redirect(`/auth?error=oauth_failed&provider=${provider}`);
+    }
+  })(req, res, next);
 });
 
 // POST /api/auth/oauth/link - Link OAuth account to existing user
