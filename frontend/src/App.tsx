@@ -18,6 +18,7 @@ const ServiceBuilder = React.lazy(() => import('@/pages/ServiceBuilder'));
 const MLModelBuilder = React.lazy(() => import('@/pages/MLModelBuilder'));
 const Simulation = React.lazy(() => import('@/pages/Simulation'));
 const Deployment = React.lazy(() => import('@/pages/Deployment'));
+const MonitoringDashboard = React.lazy(() => import('@/pages/MonitoringDashboard'));
 const Settings = React.lazy(() => import('@/pages/Settings'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 
@@ -33,6 +34,43 @@ function App() {
       </Helmet>
       
       <Routes>
+        {/* Test route to bypass auth issues */}
+        <Route 
+          path="/test" 
+          element={
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <h1>🎉 ScaleSim Test Page</h1>
+              <p>If you can see this, the frontend is working!</p>
+              <p>Backend status: <span id="backend-status">Checking...</span></p>
+              <button 
+                onClick={() => {
+                  localStorage.clear();
+                  window.location.reload();
+                }}
+                style={{ 
+                  padding: '0.5rem 1rem', 
+                  margin: '1rem', 
+                  backgroundColor: '#ef4444', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '0.25rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Clear Storage & Reload
+              </button>
+              <script dangerouslySetInnerHTML={{
+                __html: `
+                  fetch('/api/health')
+                    .then(r => r.json())
+                    .then(d => document.getElementById('backend-status').textContent = d.status)
+                    .catch(e => document.getElementById('backend-status').textContent = 'Error: ' + e.message);
+                `
+              }} />
+            </div>
+          } 
+        />
+        
         {/* Public authentication routes */}
         <Route 
           path="/auth" 
@@ -45,37 +83,200 @@ function App() {
         
         {/* Protected application routes */}
         <Route 
-          path="/*" 
+          path="/dashboard" 
           element={
             <AuthGuard requireAuth={true}>
               <MainLayout>
                 <Suspense fallback={<LoadingSpinner />}>
-                  <Routes>
-                    {/* Redirect root to dashboard */}
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    
-                    {/* Main application routes */}
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/designer" element={<SystemDesigner />} />
-                    <Route path="/designer/:systemId" element={<SystemDesigner />} />
-                    <Route path="/patterns" element={<PatternLibrary />} />
-                    <Route path="/builders/services" element={<ServiceBuilder />} />
-                    <Route path="/builders/ml-models" element={<MLModelBuilder />} />
-                    <Route path="/simulation" element={<Simulation />} />
-                    <Route path="/simulation/:systemId" element={<Simulation />} />
-                    <Route path="/deployment" element={<Deployment />} />
-                    <Route path="/deployment/:systemId" element={<Deployment />} />
-                    <Route path="/settings" element={<Settings />} />
-                    
-                    {/* User-specific routes */}
-                    <Route path="/profile" element={<UserProfile />} />
-                    
-                    {/* 404 fallback */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <Dashboard />
                 </Suspense>
               </MainLayout>
             </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/designer" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <SystemDesigner />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/designer/:systemId" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <SystemDesigner />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/patterns" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PatternLibrary />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/builders/services" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ServiceBuilder />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/builders/ml-models" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <MLModelBuilder />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/simulation" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Simulation />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/simulation/:systemId" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Simulation />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/deployment" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Deployment />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/deployment/:systemId" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Deployment />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/monitoring" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <MonitoringDashboard />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/monitoring/:systemId" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <MonitoringDashboard />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/settings" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Settings />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        <Route 
+          path="/profile" 
+          element={
+            <AuthGuard requireAuth={true}>
+              <MainLayout>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <UserProfile />
+                </Suspense>
+              </MainLayout>
+            </AuthGuard>
+          } 
+        />
+        
+        {/* Root redirect */}
+        <Route 
+          path="/" 
+          element={<Navigate to="/dashboard" replace />} 
+        />
+        
+        {/* 404 fallback */}
+        <Route 
+          path="*" 
+          element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <NotFound />
+            </Suspense>
           } 
         />
       </Routes>

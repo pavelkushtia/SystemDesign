@@ -12,6 +12,7 @@ import { validateEnvVars } from '@scalesim/shared';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import { database } from './database/index';
+import { CollaborationService } from './services/collaboration';
 
 // Import route handlers
 import authRoutes from './routes/auth';
@@ -21,6 +22,9 @@ import patternRoutes from './routes/patterns';
 import builderRoutes from './routes/builders';
 import simulationRoutes from './routes/simulation';
 import deploymentRoutes from './routes/deployment';
+import monitoringRoutes, { setMonitoringService } from './routes/monitoring';
+import { MonitoringService } from './services/monitoring';
+// import aiRoutes from './routes/ai';
 
 // Load environment variables
 dotenv.config();
@@ -47,7 +51,7 @@ app.use(helmet({
 app.use(cors({
   origin: NODE_ENV === 'production' 
     ? ['https://scalesim.app', 'https://app.scalesim.io']
-    : ['http://localhost:3000', 'http://localhost:3002', 'http://localhost:5173'],
+    : true, // Allow all origins in development
   credentials: true
 }));
 
@@ -91,6 +95,8 @@ app.use('/api/patterns', patternRoutes);
 app.use('/api/builders', builderRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/deployment', deploymentRoutes);
+app.use('/api/monitoring', monitoringRoutes);
+// app.use('/api/ai', aiRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -125,6 +131,9 @@ async function initializeDatabase() {
 function setupWebSocket(server: any) {
   const wss = new WebSocketServer({ server });
   
+  // Initialize collaboration service
+  const collaborationService = new CollaborationService(wss);
+  
   wss.on('connection', (ws, req) => {
     logger.info(`WebSocket connection established from ${req.socket.remoteAddress}`);
     
@@ -144,6 +153,15 @@ function setupWebSocket(server: any) {
               topic: 'simulation',
               simulationId: data.simulationId 
             }));
+            break;
+          // Collaboration messages are handled by CollaborationService
+          case 'user_join':
+          case 'user_leave':
+          case 'system_update':
+          case 'cursor_move':
+          case 'component_select':
+          case 'chat_message':
+            // These are handled by the CollaborationService
             break;
           default:
             ws.send(JSON.stringify({ type: 'error', message: 'Unknown message type' }));
@@ -169,8 +187,8 @@ function setupWebSocket(server: any) {
     }));
   });
   
-  logger.info('WebSocket server initialized');
-  return wss;
+  logger.info('WebSocket server initialized with collaboration support');
+  return { wss, collaborationService };
 }
 
 // ============================================================================
@@ -186,16 +204,21 @@ async function startServer() {
     const server = createServer(app);
     
     // Setup WebSocket server
-    const wss = setupWebSocket(server);
+    const { wss, collaborationService } = setupWebSocket(server);
+    
+    // Initialize monitoring service with WebSocket
+    const monitoringService = new MonitoringService(wss);
+    setMonitoringService(monitoringService);
     
     // Start listening
-    server.listen(PORT, () => {
+    server.listen(PORT, '0.0.0.0', () => {
       logger.info(`🚀 ScaleSim Backend Server started`);
       logger.info(`📍 Environment: ${NODE_ENV}`);
-      logger.info(`🌐 Server: http://localhost:${PORT}`);
-      logger.info(`📊 Health: http://localhost:${PORT}/health`);
-      logger.info(`🔌 WebSocket: ws://localhost:${PORT}`);
-      logger.info(`📚 API Docs: http://localhost:${PORT}/api/docs`);
+      logger.info(`🌐 Server: http://0.0.0.0:${PORT}`);
+      logger.info(`📊 Health: http://0.0.0.0:${PORT}/health`);
+      logger.info(`🔌 WebSocket: ws://0.0.0.0:${PORT}`);
+      logger.info(`📚 API Docs: http://0.0.0.0:${PORT}/api/docs`);
+      logger.info(`📈 Monitoring: Real-time metrics and alerts enabled`);
     });
     
     // Graceful shutdown handling

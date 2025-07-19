@@ -24,7 +24,10 @@ const AuthPage: React.FC = () => {
 
   const handleSuccess = () => {
     const redirect = searchParams.get('redirect') || '/dashboard';
-    navigate(redirect);
+    // Use window.location.href to ensure navigation works
+    setTimeout(() => {
+      window.location.href = redirect;
+    }, 100);
   };
 
   const handleModeSwitch = (newMode: 'login' | 'register') => {

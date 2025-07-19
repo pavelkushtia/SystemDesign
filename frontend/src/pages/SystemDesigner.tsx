@@ -20,6 +20,8 @@ import { ComponentNode } from '@/components/flow/ComponentNode';
 import { ComponentPalette } from '@/components/flow/ComponentPalette';
 import { PropertyPanel } from '@/components/flow/PropertyPanel';
 import { SystemToolbar } from '@/components/flow/SystemToolbar';
+import AIAssistant from '@/components/ai/AIAssistant';
+import CollaborationPanel from '@/components/collaboration/CollaborationPanel';
 
 const nodeTypes: NodeTypes = {
   component: ComponentNode,
@@ -70,6 +72,9 @@ export default function SystemDesigner() {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [systemName, setSystemName] = useState('Untitled System');
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [isCollaborationOpen, setIsCollaborationOpen] = useState(false);
+  const [systemId] = useState('demo-system-1'); // In real app, this would come from route params
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -273,6 +278,21 @@ export default function SystemDesigner() {
           />
         </div>
       )}
+
+      {/* AI Assistant */}
+      <AIAssistant
+        isOpen={isAIAssistantOpen}
+        onToggle={() => setIsAIAssistantOpen(!isAIAssistantOpen)}
+        systemId={systemId}
+        selectedComponent={selectedNode}
+      />
+
+      {/* Collaboration Panel */}
+      <CollaborationPanel
+        systemId={systemId}
+        isOpen={isCollaborationOpen}
+        onToggle={() => setIsCollaborationOpen(!isCollaborationOpen)}
+      />
     </div>
   );
 } 

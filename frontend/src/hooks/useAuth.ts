@@ -87,7 +87,7 @@ export const useAuth = () => {
     }
   }, []);
 
-  // Check auth status - now includes proper dependencies
+  // Check auth status - simplified and more reliable
   const checkAuthStatus = useCallback(async () => {
     // Prevent multiple simultaneous auth checks
     if (isCheckingAuthRef.current) {
@@ -104,7 +104,6 @@ export const useAuth = () => {
       });
       return;
     }
-
     isCheckingAuthRef.current = true;
 
     try {
@@ -147,24 +146,23 @@ export const useAuth = () => {
               logout();
             }
           }
+        } else {
+          logout();
         }
-      } else if (response.status === 429) {
-        // Rate limit - don't retry immediately
-        console.warn('Rate limit hit during auth check');
-        setAuthState(prev => ({
-          ...prev,
-          isLoading: false
-        }));
       } else {
         logout();
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      logout();
+      console.error('Auth check error:', error);
+      // Don't logout on network errors, just set loading to false
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false
+      }));
     } finally {
       isCheckingAuthRef.current = false;
     }
-  }, [refreshToken, logout]); // Include dependencies to prevent stale closures
+  }, [refreshToken, logout]);
 
   const login = useCallback(async (email: string, password: string) => {
     try {
@@ -286,11 +284,22 @@ export const useAuth = () => {
     }
   }, []);
 
-  // Initialize auth state ONCE on mount
+  // Initialize auth state ONCE on mount with timeout fallback
   useEffect(() => {
     if (!hasInitializedRef.current) {
       hasInitializedRef.current = true;
-      checkAuthStatus();
+      
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        setAuthState(prev => ({
+          ...prev,
+          isLoading: false
+        }));
+      }, 5000); // 5 second timeout
+      
+      checkAuthStatus().finally(() => {
+        clearTimeout(timeoutId);
+      });
     }
   }, [checkAuthStatus]);
 

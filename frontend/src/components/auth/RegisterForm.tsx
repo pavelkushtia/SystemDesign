@@ -72,12 +72,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
       });
 
       if (result.success) {
-        // Authentication state is now properly updated, safe to navigate
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          navigate('/dashboard');
-        }
+        // Give a small delay to ensure auth state is updated
+        setTimeout(() => {
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            // Use window.location.href as fallback to ensure navigation works
+            window.location.href = '/dashboard';
+          }
+        }, 100);
       } else {
         setError(result.error || 'Registration failed');
       }

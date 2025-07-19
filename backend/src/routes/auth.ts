@@ -289,6 +289,139 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
+// GET /api/auth/me - Get current user profile
+router.get('/me', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return next(new UnauthorizedError('User not authenticated'));
+    }
+
+    // Get user data
+    const userStmt = database.prepare(`
+      SELECT u.*, up.theme, up.notifications, up.public_profile, up.default_project_visibility
+      FROM users u
+      LEFT JOIN user_preferences up ON u.id = up.user_id
+      WHERE u.id = ?
+    `);
+    const user = userStmt.get(userId) as any;
+
+    if (!user) {
+      return next(new NotFoundError('User not found'));
+    }
+
+    // Remove sensitive data
+    const { password_hash, ...userWithoutPassword } = user;
+
+    // Get user statistics
+    const statsStmt = database.prepare(`
+      SELECT 
+        COUNT(DISTINCT s.id) as project_count,
+        COUNT(DISTINCT sim.id) as simulation_count,
+        COUNT(DISTINCT d.id) as deployment_count,
+        COUNT(DISTINCT ps.id) as starred_count
+      FROM users u
+      LEFT JOIN systems s ON u.id = s.user_id
+      LEFT JOIN simulations sim ON u.id = sim.user_id
+      LEFT JOIN deployments d ON u.id = d.user_id
+      LEFT JOIN project_stars ps ON u.id = ps.user_id
+      WHERE u.id = ?
+    `);
+    const stats = statsStmt.get(userId) as any;
+
+    const response = {
+      success: true,
+      data: {
+        ...userWithoutPassword,
+        stats: {
+          projects: stats?.project_count || 0,
+          simulations: stats?.simulation_count || 0,
+          deployments: stats?.deployment_count || 0,
+          starred: stats?.starred_count || 0
+        }
+      },
+      timestamp: new Date()
+    };
+
+    res.json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/auth/me - Update current user profile
+router.put('/me', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { first_name, last_name, avatar_url } = req.body;
+    
+    if (!userId) {
+      return next(new UnauthorizedError('User not authenticated'));
+    }
+
+    // Update user profile
+    const updateStmt = database.prepare(`
+      UPDATE users 
+      SET first_name = ?, last_name = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    updateStmt.run(first_name, last_name, avatar_url, userId);
+
+    // Log activity
+    logUserActivity(userId, 'update', 'user', userId, {
+      action: 'profile_updated',
+      changes: { first_name, last_name, avatar_url }
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Profile updated successfully',
+      timestamp: new Date()
+    };
+
+    res.json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/auth/preferences - Update user preferences
+router.put('/preferences', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { theme, notifications, public_profile, default_project_visibility } = req.body;
+    
+    if (!userId) {
+      return next(new UnauthorizedError('User not authenticated'));
+    }
+
+    // Update preferences
+    const updateStmt = database.prepare(`
+      UPDATE user_preferences 
+      SET theme = ?, notifications = ?, public_profile = ?, default_project_visibility = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?
+    `);
+    updateStmt.run(theme, notifications, public_profile, default_project_visibility, userId);
+
+    // Log activity
+    logUserActivity(userId, 'update', 'user', userId, {
+      action: 'preferences_updated',
+      changes: { theme, notifications, public_profile, default_project_visibility }
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Preferences updated successfully',
+      timestamp: new Date()
+    };
+
+    res.json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ============================================================================
 // PASSWORD RESET
 // ============================================================================

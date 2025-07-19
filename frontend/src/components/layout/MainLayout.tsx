@@ -7,6 +7,7 @@ import {
   WrenchScrewdriverIcon,
   BeakerIcon,
   CloudIcon,
+  ChartBarIcon,
   Cog6ToothIcon,
   Bars3Icon,
   XMarkIcon,
@@ -38,6 +39,7 @@ const navigation = [
   { name: 'ML Model Builder', href: '/builders/ml-models', icon: BeakerIcon },
   { name: 'Simulation', href: '/simulation', icon: BeakerIcon },
   { name: 'Deployment', href: '/deployment', icon: CloudIcon },
+  { name: 'Monitoring', href: '/monitoring', icon: ChartBarIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
 

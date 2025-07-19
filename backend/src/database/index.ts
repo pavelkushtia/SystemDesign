@@ -304,6 +304,50 @@ class DatabaseManager {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (system_id) REFERENCES systems (id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+      )`,
+
+      // Monitoring tables
+      `CREATE TABLE IF NOT EXISTS metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp INTEGER NOT NULL,
+        system_id TEXT NOT NULL,
+        component_id TEXT NOT NULL,
+        metric_type TEXT NOT NULL,
+        value REAL NOT NULL,
+        unit TEXT NOT NULL,
+        tags TEXT DEFAULT '{}',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS alert_rules (
+        id TEXT PRIMARY KEY,
+        system_id TEXT NOT NULL,
+        component_id TEXT,
+        metric_type TEXT NOT NULL,
+        condition TEXT NOT NULL CHECK (condition IN ('greater_than', 'less_than', 'equals', 'not_equals')),
+        threshold REAL NOT NULL,
+        duration INTEGER NOT NULL DEFAULT 60,
+        severity TEXT NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+        enabled INTEGER NOT NULL DEFAULT 1,
+        notification_channels TEXT DEFAULT '[]',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS alerts (
+        id TEXT PRIMARY KEY,
+        rule_id TEXT NOT NULL,
+        system_id TEXT NOT NULL,
+        component_id TEXT,
+        message TEXT NOT NULL,
+        severity TEXT NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+        status TEXT NOT NULL CHECK (status IN ('active', 'acknowledged', 'resolved')),
+        triggered_at DATETIME NOT NULL,
+        resolved_at DATETIME,
+        acknowledged_at DATETIME,
+        acknowledged_by TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (rule_id) REFERENCES alert_rules (id) ON DELETE CASCADE
       )`
     ];
 
@@ -344,7 +388,17 @@ class DatabaseManager {
       'CREATE INDEX IF NOT EXISTS idx_simulation_results_config_id ON simulation_results (config_id)',
       'CREATE INDEX IF NOT EXISTS idx_deployments_system_id ON deployments (system_id)',
       'CREATE INDEX IF NOT EXISTS idx_deployments_user_id ON deployments (user_id)',
-      'CREATE INDEX IF NOT EXISTS idx_deployments_status ON deployments (status)'
+      'CREATE INDEX IF NOT EXISTS idx_deployments_status ON deployments (status)',
+
+      // Monitoring indexes
+      'CREATE INDEX IF NOT EXISTS idx_metrics_system_id ON metrics (system_id)',
+      'CREATE INDEX IF NOT EXISTS idx_metrics_component_id ON metrics (component_id)',
+      'CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON metrics (timestamp)',
+      'CREATE INDEX IF NOT EXISTS idx_metrics_type ON metrics (metric_type)',
+      'CREATE INDEX IF NOT EXISTS idx_alert_rules_system_id ON alert_rules (system_id)',
+      'CREATE INDEX IF NOT EXISTS idx_alerts_system_id ON alerts (system_id)',
+      'CREATE INDEX IF NOT EXISTS idx_alerts_status ON alerts (status)',
+      'CREATE INDEX IF NOT EXISTS idx_alerts_severity ON alerts (severity)'
     ];
 
     for (const indexSQL of indexes) {
